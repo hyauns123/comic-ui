@@ -1,0 +1,70 @@
+/* View All Button Styles */
+:root {
+  --heading-font: "Arial", sans-serif;
+}
+
+a.hl-btn,
+a.hl-btn:active,
+a.hl-btn:link,
+button.hl-btn,
+button.hl-btn:active,
+button.hl-btn:link {
+  font-family: var(--heading-font);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px;
+  border-radius: 15px;
+  letter-spacing: 0.5px;
+  font-weight: 600;
+  line-height: 1;
+  text-decoration: none;
+  color: white;
+  font-size: 14px;
+}
+
+a.hl-btn.small-btn,
+a.hl-btn:active.small-btn,
+a.hl-btn:link.small-btn,
+button.hl-btn.small-btn,
+button.hl-btn:active.small-btn,
+button.hl-btn:link.small-btn {
+  padding: 10px 16px;
+}
+
+.btn-base {
+  font-weight: 600;
+  position: relative;
+  font-family: var(--heading-font);
+  letter-spacing: 0.5px;
+  background-image: linear-gradient(90deg, #5a0dff -5%, #ff29b8 31%, #ff581c, #ff29b8, #5a0dff);
+  box-shadow: inset 5px 2px 10px 0 rgba(45, 23, 70, 0.2), inset -5px -3px 8px 0 rgba(71, 23, 11, 0.2) !important;
+  background-size: 200% 100%;
+  transition: all .4s ease-in-out;
+}
+
+.btn-base:hover {
+  background-position: 100% 0;
+}
+
+.text-uppercase {
+  text-transform: uppercase !important;
+}
+
+.fw-normal {
+  font-weight: normal;
+}
+
+.flex-shrink-0 {
+  flex-shrink: 0;
+}
+
+.d-none {
+  display: none;
+}
+
+@media (min-width: 576px) {
+  .d-sm-inline-block {
+    display: inline-block !important;
+  }
+}

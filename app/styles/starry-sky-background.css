@@ -1,0 +1,293 @@
+/* Base styles */
+.starry-sky-background {
+  position: relative;
+  min-height: 100vh;
+  background-color: #000;
+  overflow: hidden;
+}
+
+/* Stars container */
+.stars-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+  pointer-events: none;
+}
+
+/* Individual stars */
+.star {
+  position: absolute;
+  border-radius: 50%;
+  background-color: #fff;
+  animation: twinkle var(--duration) ease-in-out infinite var(--delay);
+  opacity: var(--start-opacity, 0.5);
+  will-change: opacity;
+  pointer-events: none;
+}
+
+.star.small {
+  width: 1px;
+  height: 1px;
+}
+
+.star.medium {
+  width: 2px;
+  height: 2px;
+}
+
+.star.large {
+  width: 3px;
+  height: 3px;
+  box-shadow: 0 0 2px 1px rgba(255, 255, 255, 0.3);
+}
+
+.star.extra-large {
+  width: 4px;
+  height: 4px;
+  box-shadow: 0 0 3px 1px rgba(255, 255, 255, 0.5);
+}
+
+/* Optimize animation with will-change and transform */
+@keyframes twinkle {
+  0%,
+  100% {
+    opacity: var(--start-opacity, 0.5);
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.2);
+  }
+}
+
+/* Nebula effects - simplified for mobile */
+.nebula {
+  position: fixed;
+  border-radius: 50%;
+  filter: blur(40px);
+  opacity: 0.5;
+  pointer-events: none;
+  z-index: 0;
+  will-change: transform;
+}
+
+.nebula-1 {
+  top: 20%;
+  left: 10%;
+  width: 300px;
+  height: 300px;
+  background: radial-gradient(circle, rgba(63, 94, 251, 0.3) 0%, rgba(63, 94, 251, 0) 70%);
+  animation: float-nebula 120s infinite alternate ease-in-out;
+}
+
+.nebula-2 {
+  bottom: 10%;
+  right: 5%;
+  width: 250px;
+  height: 250px;
+  background: radial-gradient(circle, rgba(252, 70, 107, 0.3) 0%, rgba(252, 70, 107, 0) 70%);
+  animation: float-nebula 100s infinite alternate-reverse ease-in-out;
+}
+
+.nebula-3 {
+  top: 60%;
+  left: 60%;
+  width: 200px;
+  height: 200px;
+  background: radial-gradient(circle, rgba(238, 130, 238, 0.3) 0%, rgba(238, 130, 238, 0) 70%);
+  animation: float-nebula 80s infinite alternate ease-in-out;
+}
+
+/* Use transform instead of position changes for better performance */
+@keyframes float-nebula {
+  0% {
+    transform: translate(0, 0) scale(1);
+  }
+  50% {
+    transform: translate(5%, 5%) scale(1.1);
+  }
+  100% {
+    transform: translate(-5%, -5%) scale(0.9);
+  }
+}
+
+/* Moon */
+.moon {
+  position: fixed;
+  top: 10%;
+  right: 10%;
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle at 35% 35%,
+    rgba(255, 255, 255, 0.9),
+    rgba(255, 240, 220, 0.8) 30%,
+    rgba(255, 240, 220, 0.6) 70%
+  );
+  box-shadow: 0 0 20px 5px rgba(255, 255, 255, 0.4);
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Shooting stars */
+.shooting-star {
+  position: fixed;
+  width: 2px;
+  height: 2px;
+  background-color: #fff;
+  border-radius: 50%;
+  top: var(--top, 20%);
+  left: var(--left, 20%);
+  transform: rotate(var(--angle, -45deg));
+  pointer-events: none;
+  z-index: 2;
+  opacity: 0;
+  box-shadow: 0 0 5px 1px rgba(255, 255, 255, 0.5);
+  animation: shooting-star var(--duration, 4s) var(--delay, 0s) 1 forwards;
+  will-change: transform, opacity;
+}
+
+.shooting-star::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 40px;
+  height: 1px;
+  background: linear-gradient(to right, rgba(255, 255, 255, 0.8), rgba(255, 255, 255, 0));
+  transform-origin: left center;
+}
+
+@keyframes shooting-star {
+  0% {
+    opacity: 0;
+    transform: rotate(var(--angle)) translateX(0) translateY(0);
+  }
+  10% {
+    opacity: 1;
+  }
+  80% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: rotate(var(--angle)) translateX(var(--distance-x)) translateY(var(--distance-y));
+  }
+}
+
+/* Floating images */
+.floating-images-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 2;
+  overflow: hidden;
+}
+
+.floating-image {
+  position: absolute;
+  top: -100px;
+  width: 50px;
+  height: 50px;
+  pointer-events: none;
+  animation: float-down var(--float-duration, 20s) linear forwards;
+  will-change: transform, opacity;
+}
+
+.floating-image svg {
+  width: 100%;
+  height: 100%;
+  opacity: var(--float-opacity, 0.8);
+  transform: rotate(0deg);
+  animation: float-rotate var(--float-duration, 20s) ease-in-out infinite;
+  will-change: transform;
+}
+
+@keyframes float-down {
+  0% {
+    transform: translateY(-100px) translateX(0);
+    opacity: 0;
+  }
+  5% {
+    opacity: var(--float-opacity, 0.8);
+  }
+  95% {
+    opacity: var(--float-opacity, 0.8);
+  }
+  100% {
+    transform: translateY(calc(100vh + 100px)) translateX(var(--float-drift, 0px));
+    opacity: 0;
+  }
+}
+
+@keyframes float-rotate {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(var(--float-rotation, 360deg));
+  }
+}
+
+/* Media queries for mobile optimization */
+@media (max-width: 768px) {
+  .nebula {
+    filter: blur(30px); /* Less blur for better performance */
+  }
+
+  .nebula-1 {
+    width: 200px;
+    height: 200px;
+  }
+
+  .moon {
+    width: 40px;
+    height: 40px;
+    box-shadow: 0 0 10px 3px rgba(255, 255, 255, 0.3);
+  }
+
+  /* Reduce animation complexity */
+  @keyframes float-nebula {
+    0% {
+      transform: translate(0, 0);
+    }
+    100% {
+      transform: translate(3%, 3%);
+    }
+  }
+
+  /* Simplify shooting star effect */
+  .shooting-star::after {
+    width: 20px;
+  }
+}
+
+/* Reduce motion for users who prefer it */
+@media (prefers-reduced-motion: reduce) {
+  .star {
+    animation: none;
+  }
+
+  .nebula {
+    animation: none;
+  }
+
+  .shooting-star {
+    display: none;
+  }
+
+  .floating-image {
+    animation-duration: 30s !important;
+  }
+
+  .floating-image svg {
+    animation: none;
+  }
+}

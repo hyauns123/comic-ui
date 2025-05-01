@@ -1,0 +1,152 @@
+/* Cosmic Background Effects for Comics Slideshow */
+
+/* Glowing text shadow */
+.drop-shadow-glow {
+  text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+}
+
+/* Glowing box shadow for elements */
+.shadow-glow {
+  box-shadow: 0 0 15px rgba(255, 255, 255, 0.2);
+}
+
+.shadow-glow-red {
+  box-shadow: 0 0 10px rgba(239, 68, 68, 0.6);
+}
+
+/* Star animations */
+.stars-small {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image: radial-gradient(
+    1px 1px at calc(100% * var(--x, 0.5)) calc(100% * var(--y, 0.5)),
+    white,
+    transparent
+  );
+  background-size: 200px 200px;
+  animation: twinkle-small 4s infinite;
+}
+
+.stars-medium {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image: radial-gradient(
+    1.5px 1.5px at calc(100% * var(--x, 0.7)) calc(100% * var(--y, 0.3)),
+    white,
+    transparent
+  );
+  background-size: 300px 300px;
+  animation: twinkle-medium 6s infinite;
+}
+
+.stars-large {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image: radial-gradient(
+    2px 2px at calc(100% * var(--x, 0.2)) calc(100% * var(--y, 0.8)),
+    white,
+    transparent
+  );
+  background-size: 500px 500px;
+  animation: twinkle-large 8s infinite;
+}
+
+@keyframes twinkle-small {
+  0%,
+  100% {
+    opacity: 0.3;
+  }
+  50% {
+    opacity: 0.6;
+  }
+}
+
+@keyframes twinkle-medium {
+  0%,
+  100% {
+    opacity: 0.4;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+@keyframes twinkle-large {
+  0%,
+  100% {
+    opacity: 0.5;
+  }
+  50% {
+    opacity: 0.8;
+  }
+}
+
+/* Comic card enhancements */
+.comic-card-wrapper {
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+.comic-card-wrapper::before {
+  content: "";
+  position: absolute;
+  top: -5px;
+  left: -5px;
+  right: -5px;
+  bottom: -5px;
+  border-radius: 10px;
+  background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+  z-index: -1;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.comic-card-wrapper:hover::before {
+  opacity: 1;
+}
+
+/* Slideshow section background */
+.comics-slideshow {
+  background-color: transparent;
+  position: relative;
+  overflow: hidden;
+  padding: 3rem 0;
+  margin: 1rem 0;
+  border-radius: 0.5rem;
+}
+
+/* Radial gradient background */
+.bg-gradient-radial {
+  background-image: radial-gradient(var(--tw-gradient-stops));
+}
+
+/* Media queries for mobile optimization */
+@media (max-width: 768px) {
+  .stars-small,
+  .stars-medium,
+  .stars-large {
+    background-size: 50% 50%;
+  }
+
+  .comics-slideshow {
+    padding: 2rem 0;
+  }
+}
+
+/* Reduce motion for accessibility */
+@media (prefers-reduced-motion: reduce) {
+  .stars-small,
+  .stars-medium,
+  .stars-large {
+    animation: none;
+  }
+}
