@@ -3,15 +3,15 @@ import prisma from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 
-interface Params {
+interface RouteParams {
   params: {
-    mangaId: string;
+    slug: string;
   };
 }
 
-// GET /api/manga/[mangaId]/reviews - Lấy danh sách reviews của một manga
-export async function GET(request: NextRequest, { params }: Params) {
-  const { mangaId } = params;
+// GET /api/reviews/manga/[slug] - Lấy danh sách reviews của một manga
+export async function GET(request: NextRequest, { params }: RouteParams) {
+  const { slug } = params;
   const { searchParams } = new URL(request.url);
   
   // Phân trang
@@ -24,9 +24,9 @@ export async function GET(request: NextRequest, { params }: Params) {
   const order = searchParams.get("order") || "desc";
 
   try {
-    // Kiểm tra manga tồn tại
+    // Tìm manga theo slug
     const manga = await prisma.manga.findUnique({
-      where: { id: mangaId },
+      where: { slug },
     });
 
     if (!manga) {
@@ -43,7 +43,7 @@ export async function GET(request: NextRequest, { params }: Params) {
     // Lấy reviews và tổng số reviews
     const [reviews, total, averageRating] = await Promise.all([
       prisma.review.findMany({
-        where: { mangaId },
+        where: { mangaId: manga.id },
         include: {
           user: {
             select: {
@@ -60,9 +60,9 @@ export async function GET(request: NextRequest, { params }: Params) {
         skip,
         take: limit,
       }),
-      prisma.review.count({ where: { mangaId } }),
+      prisma.review.count({ where: { mangaId: manga.id } }),
       prisma.review.aggregate({
-        where: { mangaId },
+        where: { mangaId: manga.id },
         _avg: { rating: true },
       }),
     ]);
@@ -101,8 +101,8 @@ export async function GET(request: NextRequest, { params }: Params) {
   }
 }
 
-// POST /api/manga/[mangaId]/reviews - Thêm review mới
-export async function POST(request: NextRequest, { params }: Params) {
+// POST /api/reviews/manga/[slug] - Thêm review mới
+export async function POST(request: NextRequest, { params }: RouteParams) {
   // Kiểm tra xác thực
   const session = await getServerSession(authOptions);
   if (!session || !session.user) {
@@ -113,7 +113,7 @@ export async function POST(request: NextRequest, { params }: Params) {
   }
 
   const userId = session.user.id;
-  const { mangaId } = params;
+  const { slug } = params;
   const body = await request.json();
   const { rating, content } = body;
 
@@ -125,9 +125,9 @@ export async function POST(request: NextRequest, { params }: Params) {
   }
 
   try {
-    // Kiểm tra manga tồn tại
+    // Tìm manga theo slug
     const manga = await prisma.manga.findUnique({
-      where: { id: mangaId },
+      where: { slug },
     });
 
     if (!manga) {
@@ -142,7 +142,7 @@ export async function POST(request: NextRequest, { params }: Params) {
       where: {
         userId_mangaId: {
           userId,
-          mangaId,
+          mangaId: manga.id,
         },
       },
     });
@@ -160,7 +160,7 @@ export async function POST(request: NextRequest, { params }: Params) {
       const review = await tx.review.create({
         data: {
           userId,
-          mangaId,
+          mangaId: manga.id,
           rating,
           content,
         },
@@ -168,12 +168,12 @@ export async function POST(request: NextRequest, { params }: Params) {
 
       // Cập nhật rating trung bình của manga
       const averageRating = await tx.review.aggregate({
-        where: { mangaId },
+        where: { mangaId: manga.id },
         _avg: { rating: true },
       });
 
       await tx.manga.update({
-        where: { id: mangaId },
+        where: { id: manga.id },
         data: { rating: averageRating._avg.rating || 0 },
       });
 
