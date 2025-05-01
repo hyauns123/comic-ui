@@ -3,14 +3,14 @@ import prisma from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 
-interface Params {
+interface RouteParams {
   params: {
     id: string;
   };
 }
 
 // PUT /api/reviews/[id] - Cập nhật review
-export async function PUT(request: NextRequest, { params }: Params) {
+export async function PUT(request: NextRequest, { params }: RouteParams) {
   // Kiểm tra xác thực
   const session = await getServerSession(authOptions);
   if (!session || !session.user) {
@@ -33,7 +33,7 @@ export async function PUT(request: NextRequest, { params }: Params) {
   }
 
   try {
-    // Kiểm tra review tồn tại và thuộc về user hiện tại (hoặc là admin)
+    // Kiểm tra review tồn tại
     const review = await prisma.review.findUnique({
       where: { id },
     });
@@ -53,30 +53,14 @@ export async function PUT(request: NextRequest, { params }: Params) {
       );
     }
 
-    // Cập nhật review và rating trung bình của manga
-    const updatedReview = await prisma.$transaction(async (tx) => {
-      // Cập nhật review
-      const updated = await tx.review.update({
-        where: { id },
-        data: {
-          rating,
-          content,
-          updatedAt: new Date(),
-        },
-      });
-
-      // Cập nhật rating trung bình của manga
-      const averageRating = await tx.review.aggregate({
-        where: { mangaId: review.mangaId },
-        _avg: { rating: true },
-      });
-
-      await tx.manga.update({
-        where: { id: review.mangaId },
-        data: { rating: averageRating._avg.rating || 0 },
-      });
-
-      return updated;
+    // Cập nhật review
+    const updatedReview = await prisma.review.update({
+      where: { id },
+      data: {
+        rating,
+        content,
+        updatedAt: new Date(),
+      },
     });
 
     return NextResponse.json({
@@ -94,7 +78,7 @@ export async function PUT(request: NextRequest, { params }: Params) {
 }
 
 // DELETE /api/reviews/[id] - Xóa review
-export async function DELETE(request: NextRequest, { params }: Params) {
+export async function DELETE(request: NextRequest, { params }: RouteParams) {
   // Kiểm tra xác thực
   const session = await getServerSession(authOptions);
   if (!session || !session.user) {
@@ -128,23 +112,9 @@ export async function DELETE(request: NextRequest, { params }: Params) {
       );
     }
 
-    // Xóa review và cập nhật rating trung bình của manga
-    await prisma.$transaction(async (tx) => {
-      // Xóa review
-      await tx.review.delete({
-        where: { id },
-      });
-
-      // Cập nhật rating trung bình của manga
-      const averageRating = await tx.review.aggregate({
-        where: { mangaId: review.mangaId },
-        _avg: { rating: true },
-      });
-
-      await tx.manga.update({
-        where: { id: review.mangaId },
-        data: { rating: averageRating._avg.rating || 0 },
-      });
+    // Xóa review
+    await prisma.review.delete({
+      where: { id },
     });
 
     return NextResponse.json({
@@ -155,95 +125,6 @@ export async function DELETE(request: NextRequest, { params }: Params) {
     console.error("Error deleting review:", error);
     return NextResponse.json(
       { error: "Failed to delete review" },
-      { status: 500 }
-    );
-  }
-}
-
-// POST /api/reviews/[id]/like - Thích/Bỏ thích review
-export async function POST(request: NextRequest, { params }: Params) {
-  // Kiểm tra xác thực
-  const session = await getServerSession(authOptions);
-  if (!session || !session.user) {
-    return NextResponse.json(
-      { error: "Unauthorized" },
-      { status: 401 }
-    );
-  }
-
-  const userId = session.user.id;
-  const { id } = params;
-
-  try {
-    // Kiểm tra review tồn tại
-    const review = await prisma.review.findUnique({
-      where: { id },
-    });
-
-    if (!review) {
-      return NextResponse.json(
-        { error: "Review not found" },
-        { status: 404 }
-      );
-    }
-
-    // Kiểm tra user đã thích review này chưa
-    const existingLike = await prisma.reviewLike.findUnique({
-      where: {
-        userId_reviewId: {
-          userId,
-          reviewId: id,
-        },
-      },
-    });
-
-    if (existingLike) {
-      // Nếu đã thích, bỏ thích
-      await prisma.$transaction([
-        prisma.reviewLike.delete({
-          where: {
-            userId_reviewId: {
-              userId,
-              reviewId: id,
-            },
-          },
-        }),
-        prisma.review.update({
-          where: { id },
-          data: { likes: { decrement: 1 } },
-        }),
-      ]);
-
-      return NextResponse.json({
-        success: true,
-        message: "Review unliked successfully",
-        isLiked: false,
-      });
-    } else {
-      // Nếu chưa thích, thích
-      await prisma.$transaction([
-        prisma.reviewLike.create({
-          data: {
-            userId,
-            reviewId: id,
-          },
-        }),
-        prisma.review.update({
-          where: { id },
-          data: { likes: { increment: 1 } },
-        }),
-      ]);
-
-      return NextResponse.json({
-        success: true,
-        message: "Review liked successfully",
-        isLiked: true,
-      });
-    }
-  } catch (error) {
-    console.error("Error liking/unliking review:", error);
-    return NextResponse.json(
-      { error: "Failed to like/unlike review" },
       { status: 500 }
     );
   }

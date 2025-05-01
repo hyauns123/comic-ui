@@ -1,6 +1,6 @@
 import { PrismaClient } from '@prisma/client';
 
-// Ngăn chặn nhiều instance Prisma Client trong development
+// Prevent multiple instances of Prisma Client in development
 declare global {
   var prisma: PrismaClient | undefined;
 }
