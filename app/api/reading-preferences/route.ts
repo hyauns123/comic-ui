@@ -1,22 +1,24 @@
 import { NextRequest, NextResponse } from "next/server";
-import prisma from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 
 // GET /api/reading-preferences - Lấy reading preferences của user hiện tại
 export async function GET(request: NextRequest) {
-  // Kiểm tra xác thực
-  const session = await getServerSession(authOptions);
-  if (!session || !session.user) {
-    return NextResponse.json(
-      { error: "Unauthorized" },
-      { status: 401 }
-    );
-  }
-
-  const userId = session.user.id;
-  
   try {
+    // Kiểm tra xác thực
+    const session = await getServerSession(authOptions);
+    if (!session || !session.user) {
+      return NextResponse.json(
+        { error: "Unauthorized" },
+        { status: 401 }
+      );
+    }
+
+    const userId = session.user.id;
+    
+    // Import prisma client ở đây để tránh lỗi khi build
+    const { prisma } = await import("@/lib/prisma");
+    
     // Lấy reading preferences hoặc sử dụng defaults nếu chưa có
     let preferences = await prisma.readingPreferences.findUnique({
       where: { userId },
@@ -26,13 +28,13 @@ export async function GET(request: NextRequest) {
     if (!preferences) {
       return NextResponse.json({
         data: {
-          direction: "VERTICAL",
-          pageLayout: "CONTINUOUS",
-          backgroundColor: "BLACK",
+          direction: "vertical",
+          pageLayout: "continuous",
+          backgroundColor: "black",
           brightness: 100,
           contrast: 100,
-          imageQuality: "AUTO",
-          pageTransition: "SLIDE",
+          imageQuality: "auto",
+          pageTransition: "slide",
           autoAdvanceTime: 0,
           showPageNumber: true,
           rememberLastRead: true,
@@ -68,32 +70,35 @@ export async function GET(request: NextRequest) {
 
 // PUT /api/reading-preferences - Cập nhật reading preferences
 export async function PUT(request: NextRequest) {
-  // Kiểm tra xác thực
-  const session = await getServerSession(authOptions);
-  if (!session || !session.user) {
-    return NextResponse.json(
-      { error: "Unauthorized" },
-      { status: 401 }
-    );
-  }
-
-  const userId = session.user.id;
-  const body = await request.json();
-  const {
-    direction,
-    pageLayout,
-    backgroundColor,
-    brightness,
-    contrast,
-    imageQuality,
-    pageTransition,
-    autoAdvanceTime,
-    showPageNumber,
-    rememberLastRead,
-    fullscreenOnOpen,
-  } = body;
-
   try {
+    // Kiểm tra xác thực
+    const session = await getServerSession(authOptions);
+    if (!session || !session.user) {
+      return NextResponse.json(
+        { error: "Unauthorized" },
+        { status: 401 }
+      );
+    }
+
+    const userId = session.user.id;
+    const body = await request.json();
+    const {
+      direction,
+      pageLayout,
+      backgroundColor,
+      brightness,
+      contrast,
+      imageQuality,
+      pageTransition,
+      autoAdvanceTime,
+      showPageNumber,
+      rememberLastRead,
+      fullscreenOnOpen,
+    } = body;
+
+    // Import prisma client ở đây để tránh lỗi khi build
+    const { prisma } = await import("@/lib/prisma");
+    
     // Chuyển đổi giá trị enum từ camelCase thành UPPERCASE
     const formatEnumValue = (value: string) => {
       return value
