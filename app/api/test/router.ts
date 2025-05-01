@@ -1,27 +1,32 @@
+// app/api/test-data/route.ts
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 
 export async function GET() {
   try {
-    // Kiểm tra kết nối bằng cách đếm số manga
-    const mangaCount = await prisma.manga.count();
-    
+    // Lấy một số dữ liệu mẫu
+    const [mangas, authors, users] = await Promise.all([
+      prisma.manga.findMany({ take: 5, include: { author: true } }),
+      prisma.author.findMany({ take: 3 }),
+      prisma.user.findMany({ 
+        where: { role: "FREE" },
+        select: { id: true, username: true, email: true },
+        take: 2 
+      })
+    ]);
+
     return NextResponse.json({
       success: true,
-      message: "Kết nối cơ sở dữ liệu thành công",
       data: {
-        mangaCount,
-        timestamp: new Date().toISOString(),
-      },
+        mangas,
+        authors,
+        users
+      }
     });
   } catch (error) {
-    console.error("Lỗi kết nối cơ sở dữ liệu:", error);
+    console.error("Error fetching test data:", error);
     return NextResponse.json(
-      { 
-        success: false, 
-        message: "Lỗi kết nối cơ sở dữ liệu", 
-        error: error instanceof Error ? error.message : String(error) 
-      },
+      { success: false, error: "Failed to fetch test data" },
       { status: 500 }
     );
   }
