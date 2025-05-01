@@ -1,15 +1,425 @@
 // This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
-  output   = "../src/generated/prisma"
 }
 
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+}
+
+// User model
+model User {
+  id             String           @id @default(cuid())
+  username       String           @unique
+  name           String?
+  email          String           @unique
+  password       String // Hashed
+  bio            String?
+  location       String?
+  website        String?
+  joinDate       DateTime         @default(now())
+  avatar         String?
+  role           UserRole         @default(FREE)
+  
+  // Relations
+  reviews         Review[]
+  bookmarks       Bookmark[]
+  readingProgress ReadingProgress[]
+  comments        Comment[]
+  replies         Reply[]
+  collections     ComicCollection[]
+  readingPreferences ReadingPreferences?
+  reviewLikes     ReviewLike[]
+  commentLikes    CommentLike[]
+  replyLikes      ReplyLike[]
+
+  @@map("users")
+}
+
+enum UserRole {
+  FREE
+  PREMIUM
+  ADMIN
+}
+
+// Manga model
+model Manga {
+  id            String     @id @default(cuid())
+  slug          String     @unique
+  title         String
+  originalTitle String?
+  coverImage    String
+  authorId      String
+  status        MangaStatus
+  rating        Float      @default(0)
+  year          String?
+  ageRating     String?
+  publisher     String?
+  description   String
+  featured      Boolean    @default(false)
+  updatedAt     DateTime   @updatedAt
+  createdAt     DateTime   @default(now())
+  viewCount     Int        @default(0)
+  
+  // Additional fields from MangaDetailResponse
+  lastUpdated    DateTime?
+  nextUpdate     DateTime?
+  volumeCount    Int?
+  readingDirection String?
+  
+  // Relations
+  author         Author     @relation(fields: [authorId], references: [id])
+  chapters       Chapter[]
+  reviews        Review[]
+  bookmarks      Bookmark[]
+  readingProgress ReadingProgress[]
+  mangaGenres    MangaGenre[]
+  mangaTags      MangaTag[]
+  mangaThemes    MangaTheme[]
+
+  @@map("manga")
+}
+
+enum MangaStatus {
+  ONGOING
+  COMPLETED
+  COMING_SOON
+  ON_HIATUS
+  CANCELLED
+}
+
+// Chapter model
+model Chapter {
+  id          String   @id @default(cuid())
+  number      Int
+  title       String
+  date        DateTime
+  pages       String[] // Array of image URLs
+  mangaId     String
+  status      ChapterStatus @default(PUBLISHED)
+  
+  // Relations
+  manga       Manga    @relation(fields: [mangaId], references: [id], onDelete: Cascade)
+  readingProgress ReadingProgress[]
+
+  @@unique([mangaId, number]) // Ensure chapters have unique numbers within a manga
+  @@map("chapters")
+}
+
+enum ChapterStatus {
+  DRAFT
+  PUBLISHED
+  SCHEDULED
+}
+
+// Author model
+model Author {
+  id        String   @id @default(cuid())
+  name      String
+  bio       String?
+  avatar    String?
+  
+  // Relations
+  manga     Manga[]
+
+  @@map("authors")
+}
+
+// Genre model
+model Genre {
+  id        String      @id @default(cuid())
+  name      String      @unique
+  
+  // Relations
+  mangaGenres MangaGenre[]
+
+  @@map("genres")
+}
+
+// Many-to-many relationship between Manga and Genre
+model MangaGenre {
+  mangaId   String
+  genreId   String
+  
+  // Relations
+  manga     Manga     @relation(fields: [mangaId], references: [id], onDelete: Cascade)
+  genre     Genre     @relation(fields: [genreId], references: [id], onDelete: Cascade)
+
+  @@id([mangaId, genreId])
+  @@map("manga_genres")
+}
+
+// Tag model
+model Tag {
+  id        String    @id @default(cuid())
+  name      String    @unique
+  
+  // Relations
+  mangaTags MangaTag[]
+
+  @@map("tags")
+}
+
+// Many-to-many relationship between Manga and Tag
+model MangaTag {
+  mangaId   String
+  tagId     String
+  
+  // Relations
+  manga     Manga     @relation(fields: [mangaId], references: [id], onDelete: Cascade)
+  tag       Tag       @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([mangaId, tagId])
+  @@map("manga_tags")
+}
+
+// Theme model (for MangaDetailResponse themes)
+model Theme {
+  id        String      @id @default(cuid())
+  name      String      @unique
+  
+  // Relations
+  mangaThemes MangaTheme[]
+
+  @@map("themes")
+}
+
+// Many-to-many relationship between Manga and Theme
+model MangaTheme {
+  mangaId   String
+  themeId   String
+  
+  // Relations
+  manga     Manga     @relation(fields: [mangaId], references: [id], onDelete: Cascade)
+  theme     Theme     @relation(fields: [themeId], references: [id], onDelete: Cascade)
+
+  @@id([mangaId, themeId])
+  @@map("manga_themes")
+}
+
+// Review model
+model Review {
+  id                String   @id @default(cuid())
+  userId            String
+  mangaId           String
+  rating            Float
+  content           String
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  likes             Int      @default(0)
+  isVerifiedPurchase Boolean  @default(false)
+  
+  // Relations
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  manga             Manga    @relation(fields: [mangaId], references: [id], onDelete: Cascade)
+  reviewLikes       ReviewLike[]
+
+  @@unique([userId, mangaId]) // One review per user per manga
+  @@map("reviews")
+}
+
+// ReviewLike model for tracking who liked a review
+model ReviewLike {
+  userId    String
+  reviewId  String
+  
+  // Relations
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  review    Review   @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+
+  @@id([userId, reviewId])
+  @@map("review_likes")
+}
+
+// Bookmark model
+model Bookmark {
+  id        String   @id @default(cuid())
+  userId    String
+  mangaId   String
+  savedAt   DateTime @default(now())
+  notes     String?
+  status    BookmarkStatus @default(READING)
+  
+  // Relations
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  manga     Manga    @relation(fields: [mangaId], references: [id], onDelete: Cascade)
+  bookmarkCollections BookmarkCollection[]
+
+  @@unique([userId, mangaId]) // One bookmark per user per manga
+  @@map("bookmarks")
+}
+
+enum BookmarkStatus {
+  READING
+  ON_HOLD
+  COMPLETED
+  PLAN_TO_READ
+  DROPPED
+}
+
+// ComicCollection model
+model ComicCollection {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  coverImage  String?
+  createdAt   DateTime @default(now())
+  userId      String
+  
+  // Relations
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  bookmarkCollections BookmarkCollection[]
+
+  @@map("comic_collections")
+}
+
+// Many-to-many relationship between Bookmark and ComicCollection
+model BookmarkCollection {
+  bookmarkId       String
+  comicCollectionId String
+  
+  // Relations
+  bookmark         Bookmark        @relation(fields: [bookmarkId], references: [id], onDelete: Cascade)
+  comicCollection  ComicCollection @relation(fields: [comicCollectionId], references: [id], onDelete: Cascade)
+
+  @@id([bookmarkId, comicCollectionId])
+  @@map("bookmark_collections")
+}
+
+// ReadingProgress model
+model ReadingProgress {
+  id                  String   @id @default(cuid())
+  userId              String
+  mangaId             String
+  chapterId           String
+  currentPage         Int      @default(0)
+  totalPages          Int
+  lastReadAt          DateTime @default(now())
+  
+  // Relations
+  user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  manga               Manga    @relation(fields: [mangaId], references: [id], onDelete: Cascade)
+  chapter             Chapter  @relation(fields: [chapterId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, mangaId, chapterId]) // One progress entry per user per manga per chapter
+  @@map("reading_progress")
+}
+
+// ReadingPreferences model
+model ReadingPreferences {
+  id                String   @id @default(cuid())
+  userId            String   @unique
+  direction         ReadingDirection @default(VERTICAL)
+  pageLayout        PageLayout @default(CONTINUOUS)
+  backgroundColor   BackgroundColor @default(BLACK)
+  brightness        Int       @default(100)
+  contrast          Int       @default(100)
+  imageQuality      ImageQuality @default(AUTO)
+  pageTransition    PageTransition @default(SLIDE)
+  autoAdvanceTime   Int       @default(0)
+  showPageNumber    Boolean   @default(true)
+  rememberLastRead  Boolean   @default(true)
+  fullscreenOnOpen  Boolean   @default(false)
+  
+  // Relations
+  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("reading_preferences")
+}
+
+enum ReadingDirection {
+  LTR
+  RTL
+  VERTICAL
+}
+
+enum PageLayout {
+  SINGLE
+  DOUBLE
+  CONTINUOUS
+  WEBTOON
+}
+
+enum BackgroundColor {
+  BLACK
+  DARK_GRAY
+  SEPIA
+  WHITE
+}
+
+enum ImageQuality {
+  LOW
+  MEDIUM
+  HIGH
+  AUTO
+}
+
+enum PageTransition {
+  SLIDE
+  FADE
+  INSTANT
+}
+
+// Comment model
+model Comment {
+  id        String   @id @default(cuid())
+  userId    String
+  content   String
+  createdAt DateTime @default(now())
+  likes     Int      @default(0)
+  mangaId   String?  // Optional: Comments can be specific to manga
+  chapterId String?  // Optional: Comments can be specific to chapter
+  
+  // Relations
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  replies   Reply[]
+  commentLikes CommentLike[]
+
+  @@map("comments")
+}
+
+// Reply model
+model Reply {
+  id        String   @id @default(cuid())
+  userId    String
+  commentId String
+  content   String
+  createdAt DateTime @default(now())
+  likes     Int      @default(0)
+  
+  // Relations
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  comment   Comment  @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  replyLikes ReplyLike[]
+
+  @@map("replies")
+}
+
+// CommentLike model for tracking who liked a comment
+model CommentLike {
+  userId    String
+  commentId String
+  
+  // Relations
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  comment   Comment  @relation(fields: [commentId], references: [id], onDelete: Cascade)
+
+  @@id([userId, commentId])
+  @@map("comment_likes")
+}
+
+// ReplyLike model for tracking who liked a reply
+model ReplyLike {
+  userId    String
+  replyId   String
+  
+  // Relations
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  reply     Reply    @relation(fields: [replyId], references: [id], onDelete: Cascade)
+
+  @@id([userId, replyId])
+  @@map("reply_likes")
 }
