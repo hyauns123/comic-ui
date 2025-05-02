@@ -1,48 +1,40 @@
+# Sử dụng Node.js 18 hoặc mới hơn
 FROM node:18-alpine AS base
 
-# Install dependencies only when needed
-FROM base AS deps
+# Cài đặt các phụ thuộc cần thiết
 RUN apk add --no-cache libc6-compat
 WORKDIR /app
 
+# Cài đặt pnpm (nhanh hơn npm)
+RUN npm install -g pnpm
+
 # Copy package files
-COPY package.json ./
-RUN npm install
+COPY package.json pnpm-lock.yaml* ./
+RUN pnpm install --frozen-lockfile
 
-# Setup Prisma
-COPY prisma ./prisma
+# Cài đặt Prisma CLI
 RUN npx prisma generate
 
-# Rebuild the source code only when needed
-FROM base AS builder
-WORKDIR /app
-COPY --from=deps /app/node_modules ./node_modules
-COPY --from=deps /app/node_modules/.prisma ./node_modules/.prisma
+# Build ứng dụng
 COPY . .
+RUN pnpm build
 
-# Generate Prisma client again to ensure it exists
-RUN npx prisma generate
-
-# Run the build process
-ENV NEXT_TELEMETRY_DISABLED 1
-RUN npm run build
-
-# Production image, copy all files and run
-FROM base AS runner
+# Sản phẩm cho giai đoạn production
+FROM node:18-alpine AS runner
 WORKDIR /app
 
-ENV NODE_ENV production
-ENV NEXT_TELEMETRY_DISABLED 1
+ENV NODE_ENV=production
 
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 
-# Copy necessary files
-COPY --from=builder /app/public ./public
-COPY --from=builder /app/.next/standalone ./
-COPY --from=builder /app/.next/static ./.next/static
-COPY --from=builder /app/prisma ./prisma
-COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
+COPY --from=base /app/public ./public
+
+# Cấu trúc thư mục Next.js quan trọng với phân quyền phù hợp
+COPY --from=base --chown=nextjs:nodejs /app/.next/standalone ./
+COPY --from=base --chown=nextjs:nodejs /app/.next/static ./.next/static
+COPY --from=base /app/node_modules ./node_modules
+COPY --from=base /app/prisma ./prisma
 
 USER nextjs
 
@@ -50,5 +42,4 @@ EXPOSE 3000
 
 ENV PORT 3000
 
-# Apply database migrations at startup, then start the app
-CMD npx prisma migrate deploy && node server.js
+CMD ["node", "server.js"]

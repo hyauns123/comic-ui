@@ -5,7 +5,9 @@ import { useState } from "react"
 import StarrySkyBackground from "@/components/starry-sky-background"
 import StarrySkyControls from "@/components/starry-sky-controls"
 
-export default function ViewAllComicsClient({ children }) {
+import { ReactNode } from "react";
+
+export default function ViewAllComicsClient({ children }: { children: ReactNode }) {
   const [skySettings, setSkySettings] = useState({
     starCount: 500,
     showShootingStars: true,
