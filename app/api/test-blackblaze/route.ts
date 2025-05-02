@@ -1,46 +1,47 @@
-import { NextResponse } from 'next/server';
-import { S3Client, ListBucketsCommand } from '@aws-sdk/client-s3';
+import { NextResponse } from "next/server";
+import { S3Client, ListBucketsCommand } from "@aws-sdk/client-s3";
 
-// Chỉ sử dụng route này cho mục đích kiểm tra
 export async function GET() {
   try {
-    // Tạo S3 client với cấu hình Backblaze
+    // Cấu hình S3 client
     const s3Client = new S3Client({
-      region: 'us-east-1', // B2 yêu cầu region, nhưng bỏ qua nó
+      region: "us-east-1",
       endpoint: process.env.B2_ENDPOINT,
       credentials: {
-        accessKeyId: process.env.B2_APPLICATION_KEY_ID || '',
-        secretAccessKey: process.env.B2_APPLICATION_KEY || '',
+        accessKeyId: process.env.B2_APPLICATION_KEY_ID || "",
+        secretAccessKey: process.env.B2_APPLICATION_KEY || "",
       },
-      forcePathStyle: true
+      forcePathStyle: true,
     });
     
-    // Kiểm tra kết nối bằng cách liệt kê buckets
+    // Test kết nối bằng cách liệt kê buckets
     const command = new ListBucketsCommand({});
     const response = await s3Client.send(command);
     
-    // Xóa thông tin nhạy cảm
-    const safeBuckets = response.Buckets?.map(bucket => ({
-      Name: bucket.Name,
-      CreationDate: bucket.CreationDate
-    }));
-    
-    // Trả về thông tin cấu hình (đã loại bỏ thông tin nhạy cảm)
+    // Trả về thông tin kết nối
     return NextResponse.json({
       success: true,
-      message: 'Kết nối tới Backblaze B2 thành công',
+      message: "Kết nối Backblaze B2 thành công",
+      buckets: response.Buckets?.map(b => ({
+        name: b.Name,
+        creationDate: b.CreationDate
+      })),
       endpoint: process.env.B2_ENDPOINT,
       bucketName: process.env.B2_BUCKET_NAME,
-      buckets: safeBuckets,
-      environment: process.env.NODE_ENV
     });
   } catch (error) {
-    console.error('Lỗi kết nối Backblaze B2:', error);
+    console.error("Lỗi kết nối Backblaze B2:", error);
     
+    // Trả về thông tin lỗi
     return NextResponse.json({
       success: false,
-      message: 'Không thể kết nối tới Backblaze B2',
-      error: error instanceof Error ? error.message : 'Unknown error'
+      message: "Không thể kết nối đến Backblaze B2",
+      error: error instanceof Error ? error.message : String(error),
+      endpoint: process.env.B2_ENDPOINT,
+      bucketName: process.env.B2_BUCKET_NAME,
+      keyId: process.env.B2_APPLICATION_KEY_ID ? 
+        `${process.env.B2_APPLICATION_KEY_ID?.substring(0, 5)}...` : 
+        "undefined"
     }, { status: 500 });
   }
 }
