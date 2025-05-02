@@ -1,23 +1,19 @@
-# Sử dụng Node.js 18 hoặc mới hơn
 FROM node:18-alpine AS base
 
 # Cài đặt các phụ thuộc cần thiết
 RUN apk add --no-cache libc6-compat
 WORKDIR /app
 
-# Cài đặt pnpm (nhanh hơn npm)
-RUN npm install -g pnpm
-
 # Copy package files
-COPY package.json pnpm-lock.yaml* ./
-RUN pnpm install --frozen-lockfile
+COPY package.json package-lock.json* ./
+RUN npm ci
 
 # Cài đặt Prisma CLI
 RUN npx prisma generate
 
 # Build ứng dụng
 COPY . .
-RUN pnpm build
+RUN npm run build
 
 # Sản phẩm cho giai đoạn production
 FROM node:18-alpine AS runner
